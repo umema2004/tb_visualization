@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TB Analysis Dashboard - D3</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1><b>Tuberculosis Analysis</b></h1>
+        <h2>Join Us and explore global trends into Tuberculosis, a fatal disease.</h2>
+    </header>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card" id="stat1">Total Incidence</div>
+        <div class="stat-card" id="stat2">Average Incidence Rate (per 100k)</div>
+        <div class="stat-card" id="stat3">Mortality Rate (per 100k)</div>
+        <div class="stat-card" id="stat4">Case Fatality Ratio</div>
+    </div>
+
+    <!-- ELEMENTS FOR TIMELINE VISUALIZATION -->
+    <div id="timeline" class="timeline">
+        <a href="timeline.html" id="timeline-container">
+            <div class="legend">
+                
+            </div>
+        </a>
+    </div>
+
+    <!-- Tooltip div for Timeline -->
+    <div class="timeline_tooltip" id="timeline_tooltip"></div>
+
+    <!-- Row of two visualizations: Tree and Map -->
+    <div class="visualization-row">
+        <a href="tree.html" id="tree-container" class="visualization half"></a>
+        <a href="mapchart.html" id="map-container" class="visualization half"></a>
+    </div>
+
+    <!-- Tooltip div for Tree -->
+    <div class="tree_tooltip" id="tree_tooltip"></div>
+
+    <!-- Row of two visualizations: FD and Sunburst -->
+    <div class="visualization-row">
+        <a href="fd.html" id="fd-container" class="visualization half"></a>
+        <a href="sunburst.html" id="sunburst-container" class="visualization half"></a>
+    </div>
+
+    <!-- Tooltip div for Force-Directed Graph -->
+    <div class="fd_tooltip" id="fd_tooltip"></div>
+
+    <!-- Tooltip div for Sunburst -->
+    <div class="sb_tooltip" id="sb_tooltip"></div>
+
+    <script>
+        d3.csv("data/preprocessed_data_tb.csv").then(function(data) {
+        const totalIncidence = d3.sum(data, d => d.e_inc_num);
+        const avgRate = d3.mean(data, d => d.e_inc_100k);
+        const mortality_rate = d3.mean(data, d => d.e_mort_exc_tbhiv_100k);
+        const avgCFR = d3.mean(data, d => +d.cfr);
+
+        d3.select("#stat1").text(`Total Incidence: ${totalIncidence}`);
+        d3.select("#stat2").text(`Avg Rate: ${avgRate.toFixed(2)} per 100k`);
+        d3.select("#stat3").text(`Mortality Rate: ${mortality_rate.toFixed(2)} per 100k`);
+        d3.select("#stat4").text(`Case Fatality Ratio: ${(avgCFR * 100).toFixed(2)}%`);
+    });
+    </script>
+
+    <script src="js/timeline.js"></script>
+    <script src="js/tree.js"></script>
+    <script src="js/mapchart.js"></script>
+    <script src="js/fd.js"></script>
+    <script src="js/sunburst.js"></script> 
+</body>
+</html>

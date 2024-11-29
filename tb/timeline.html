@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #controls {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .btn {
+            margin: 0 5px;
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .tooltip {
+            position: absolute;
+            background: white;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .legend {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .legend div {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+        }
+        .legend div span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        svg {
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1><b>Animated Timeline Visualization</b></h1>
+    <p>This interactive chart visualizes the global trends in tuberculosis mortality and incidence over time, with options to filter by region and year.</p>
+    <div id="controls">
+        <select id="region-filter">
+            <option value="All">All Regions</option>
+            <option value="AMR">AMR</option>
+            <option value="EUR">EUR</option>
+            <option value="EMR">EMR</option>
+            <option value="AFR">AFR</option>
+            <option value="SEA">SEA</option>
+            <option value="WPR">WPR</option>
+        </select>
+        <button class="btn" id="play-pause-btn" style="background-color: #007bff;">Pause</button>
+        <input type="range" id="year-slider" min="1990" max="2020" value="2015" step="1" style="margin: 0 10px;">
+        <span id="year-display">2015</span>
+    </div>
+    <svg id="chart" width="900" height="500"></svg>
+    <div class="legend">
+        <div><span style="background: #1f77b4;"></span> AMR</div>
+        <div><span style="background: #ff7f0e;"></span> EUR</div>
+        <div><span style="background: #2ca02c;"></span> EMR</div>
+        <div><span style="background: #d62728;"></span> AFR</div>
+        <div><span style="background: #9467bd;"></span> SEA</div>
+        <div><span style="background: #8c564b;"></span> WPR</div>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        const svg = d3.select("#chart");
+        const width = +svg.attr("width");
+        const height = +svg.attr("height");
+
+        const margin = { top: 20, right: 30, bottom: 50, left: 60 };
+        const innerWidth = width - margin.left - margin.right;
+        const innerHeight = height - margin.top - margin.bottom;
+
+        const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const xScale = d3.scaleLinear().range([0, innerWidth]);
+        const yScale = d3.scaleLinear().range([innerHeight, 0]);
+        const sizeScale = d3.scaleLinear().range([5, 20]);
+        const colorScale = d3.scaleOrdinal()
+            .domain(["AMR", "EUR", "EMR", "AFR", "SEA", "WPR"])
+            .range(["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"]);
+
+        const xAxis = g.append("g").attr("transform", `translate(0,${innerHeight})`);
+        const yAxis = g.append("g");
+
+        const tooltip = d3.select("#tooltip");
+
+        let yearIndex = 0;
+        let isPaused = false;
+
+        d3.csv("preprocessed_data_tb.csv").then(data => {
+    data.forEach(d => {
+        d.year = +d.year;
+        d.incidence = +d.e_inc_100k; 
+        d.mortality = +d.e_mort_100k; 
+        d.population = +d.e_pop_num; 
+    });
+
+    const years = [...new Set(data.map(d => d.year))];
+    const minYear = d3.min(years);
+    const maxYear = d3.max(years);
+
+    d3.select("#year-slider")
+        .attr("min", minYear)
+        .attr("max", maxYear);
+
+    xScale.domain([0, 500]);
+    yScale.domain([0, d3.max(data, d => d.mortality)]);
+    sizeScale.domain([0, d3.max(data, d => d.population)]);
+
+    xAxis.call(d3.axisBottom(xScale));
+    yAxis.call(d3.axisLeft(yScale));
+
+    let selectedRegion = "All"; // Default filter
+
+    const update = year => {
+        // Filter data by year and region
+        let filteredData = data.filter(d => d.year === year && d.mortality >= 10);
+        if (selectedRegion !== "All") {
+            filteredData = filteredData.filter(d => d.g_whoregion === selectedRegion);
+        }
+
+        const circles = g.selectAll("circle").data(filteredData, d => `${d.g_whoregion}-${d.country}`);
+
+        circles.enter()
+            .append("circle")
+            .attr("cx", d => xScale(d.incidence))
+            .attr("cy", d => yScale(d.mortality))
+            .attr("r", d => sizeScale(d.population))
+            .attr("fill", d => colorScale(d.g_whoregion))
+            .attr("opacity", 0.05)
+            .on("mouseover", function (event, d) {
+                tooltip.style("opacity", 1)
+                    .html(`
+                        <b>Region:</b> ${d.g_whoregion}<br>
+                        <b>Country:</b> ${d.country}<br>
+                        <b>Year:</b> ${d.year}<br>
+                        <b>Incidence:</b> ${d.incidence}<br>
+                        <b>Mortality:</b> ${d.mortality}<br>
+                        <b>Population:</b> ${d.population.toLocaleString()}
+                    `)
+                    .style("left", `${event.pageX + 10}px`)
+                    .style("top", `${event.pageY - 28}px`);
+                d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
+            })
+            .on("mouseout", function () {
+                tooltip.style("opacity", 0);
+                d3.select(this).attr("stroke", "none");
+            })
+            .merge(circles)
+            .transition()
+            .duration(500)
+            .attr("cx", d => xScale(d.incidence))
+            .attr("cy", d => yScale(d.mortality))
+            .attr("r", d => sizeScale(d.population))
+            .attr("fill", d => colorScale(d.g_whoregion));
+
+        circles.exit().remove();
+    };
+
+    d3.select("#region-filter").on("change", function () {
+        selectedRegion = this.value; // Update selected region
+        const year = +d3.select("#year-slider").property("value");
+        update(year); // Update the chart
+    });
+
+    d3.select("#play-pause-btn").on("click", () => {
+        isPaused = !isPaused;
+        d3.select("#play-pause-btn").text(isPaused ? "Play" : "Pause");
+    });
+
+    d3.select("#year-slider").on("input", function () {
+        const year = +this.value;
+        d3.select("#year-display").text(year);
+        update(year);
+    });
+
+    d3.interval(() => {
+        if (isPaused) return;
+        yearIndex = (yearIndex + 1) % years.length;
+        const year = years[yearIndex];
+        d3.select("#year-slider").property("value", year);
+        d3.select("#year-display").text(year);
+        update(year);
+    }, 1000);
+
+    update(minYear);
+});
+
+    </script>
+</body>
+</html>

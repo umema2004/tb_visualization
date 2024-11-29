@@ -1,0 +1,58 @@
+/* Basic styling for starters */
+svg {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.axis-label {
+    font-size: 10px;
+    font-weight: bold;
+}
+
+#control-buttons {
+    margin-top: 20px;
+}
+
+#pause-btn {
+    padding: 10px;
+    background-color: steelblue;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+#pause-btn:hover {
+    background-color: darkblue;
+}
+
+#date-slider {
+    width: 20%;
+    margin-top: 10px;
+}
+
+.tooltip {
+    position: absolute;
+    padding: 8px;
+    background-color: white;
+    border: 1px solid gray;
+    border-radius: 4px;
+    font-size: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.legend {
+    font-size: 12px;
+}
+
+.legend rect {
+    width: 15px;
+    height: 15px;
+    margin-right: 5px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}

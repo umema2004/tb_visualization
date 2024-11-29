@@ -1,0 +1,35 @@
+/* Basic styling */
+svg {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.node {
+    stroke: #fff;
+    stroke-width: 1px;
+}
+
+.tooltip {
+    position: absolute;
+    text-align: center;
+    width: auto;
+    height: auto;
+    padding: 8px;
+    background: lightgray;
+    border: 1px solid gray;
+    border-radius: 4px;
+    pointer-events: none;
+    font-size: 12px;
+}
+
+.highlighted {
+    stroke: black;
+    stroke-width: 2px;
+}
+
+.legend {
+    font-size: 12px;
+}
+
+.dropdown {
+    margin: 20px;
+}
